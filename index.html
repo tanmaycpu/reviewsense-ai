@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ReviewSense AI: Customer Review Intelligence</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#17202b;--mut:#5d6b7a;--line:#dfe3e8;--pos:#0f8a7a;--neg:#c2334a;--neu:#a87a12;--acc:#3347d1;--pbg:#d6f0ec;--nbg:#fadadf;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f151c;--card:#18212b;--ink:#e8edf2;--mut:#9aa8b6;--line:#2b3744;--pos:#3cc6b2;--neg:#ff7a8e;--neu:#e0b04a;--acc:#9aa7ff;--pbg:#12413b;--nbg:#4a1d27}}
+:root[data-theme="dark"]{--bg:#0f151c;--card:#18212b;--ink:#e8edf2;--mut:#9aa8b6;--line:#2b3744;--pos:#3cc6b2;--neg:#ff7a8e;--neu:#e0b04a;--acc:#9aa7ff;--pbg:#12413b;--nbg:#4a1d27}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:28px 16px 40px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0}
+h1{font-size:34px;letter-spacing:-.5px}h2{font-size:19px;margin-bottom:10px}h3{font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+header p{color:var(--mut);margin:6px 0 20px;max-width:60ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+textarea{width:100%;height:96px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:10px;font:inherit;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 14px;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:600}
+button:focus-visible,.btn:focus-within,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.note{color:var(--mut);font-size:13px;margin:10px 0 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.k{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.k b{display:block;font:600 26px Georgia,serif}.k span{color:var(--mut);font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1.4fr;gap:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:28px}}
+.ins{border-top:1px solid var(--line);padding:12px 0}.ins:first-child{border-top:0;padding-top:0}
+.tag{font:600 12px system-ui;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line)}
+.High .tag{background:var(--nbg);color:var(--neg);border-color:transparent}.Medium .tag{color:var(--neu)}
+.ins p{margin:4px 0}blockquote{margin:6px 0;padding-left:10px;border-left:3px solid var(--line);color:var(--mut)}
+.act{font-weight:600}
+.chip{display:inline-block;margin:0 6px 6px 0;padding:3px 10px;border-radius:99px;background:var(--nbg);color:var(--neg)}
+#feed{max-height:430px;overflow:auto}
+.rv{padding:10px 0;border-top:1px solid var(--line)}.rv:first-child{border-top:0}.rv p{margin:4px 0 0}
+.lb{font:600 12px system-ui;padding:2px 8px;border-radius:99px}
+.Positive.lb{background:var(--pbg);color:var(--pos)}.Negative.lb{background:var(--nbg);color:var(--neg)}.Neutral.lb{background:var(--bg);color:var(--neu);border:1px solid var(--line)}
+mark{background:none;color:inherit;border-radius:3px;padding:0 2px}mark.p{background:var(--pbg)}mark.n{background:var(--nbg)}
+.sm{overflow-x:auto}
+footer{color:var(--mut);font-size:13px;max-width:80ch}
+</style></head><body><main>
+<header><h1>ReviewSense AI</h1>
+<p>Paste customer reviews or upload a CSV. See how people feel, which complaints repeat, and what to fix first.</p></header>
+<section class="card"><textarea id="ta" aria-label="Reviews, one per line" placeholder="Paste one review per line"></textarea>
+<div class="row"><button id="go" class="pri">Analyze reviews</button><button id="smp">Load sample reviews</button>
+<label class="btn">Upload CSV<input type="file" id="fi" accept=".csv,.txt" hidden></label></div>
+<p class="note" id="src">CSV needs a text column; a rating column is optional.</p></section>
+<div id="out" hidden>
+<div class="kpis" id="kp"></div>
+<div class="grid"><section class="card"><h2>Sentiment split</h2><div id="c1" class="sm"></div></section>
+<section class="card"><h2>Sentiment by topic</h2><div id="c2" class="sm"></div></section></div>
+<section class="card"><h2>What to fix first</h2><div id="ins"></div></section>
+<section class="card"><h2>Repeated complaint words</h2><div id="chips"></div></section>
+<section class="card"><h2>Reviews, with the words that drove each score</h2><div id="feed"></div></section>
+</div>
+<footer><p>This demo runs a rule-based engine (word polarity, negation, intensifiers, topic detection) entirely in your browser; nothing is uploaded. The project's Python pipeline uses the same rules plus an optional Transformer backend. The built-in sample is 40 synthetic reviews of a fictional earbud.</p></footer>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script>
+const L={"lex":{"amazing":3,"excellent":3,"fantastic":3,"superb":3,"awesome":3,"perfect":3,"perfectly":3,"love":2,"loved":2,"great":2,"good":1,"nice":1,"happy":2,"comfortable":2,"crisp":2,"clear":1,"helpful":2,"premium":2,"sturdy":2,"reliable":2,"stable":2,"fast":1,"quick":2,"recommend":2,"worth":2,"best":2,"decent":1,"fine":1,"okay":0.5,"light":1,"neat":1,"fair":1,"affordable":2,"durable":2,"solid":2,"terrible":-3,"awful":-3,"worst":-3,"horrible":-3,"useless":-3,"waste":-3,"defective":-3,"rude":-3,"bad":-2,"poor":-2,"disappointing":-2,"disappointed":-2,"annoying":-2,"frustrating":-2,"broke":-2,"broken":-2,"stopped":-2,"dies":-2,"drains":-2,"drain":-2,"weak":-2,"slow":-1,"late":-1,"damaged":-2,"crushed":-2,"uncomfortable":-2,"tight":-1,"hurt":-2,"ache":-2,"buggy":-2,"unreliable":-2,"flat":-1,"overpriced":-2,"disconnecting":-2,"drops":-2,"expensive":-1,"forever":-1,"avoid":-2,"falling":-1,"cutting":-1},"neg":["not","no","never","isn't","doesn't","don't","won't","can't","cannot","couldn't","wasn't","aren't","didn't","hardly","without"],"int":{"very":1.5,"really":1.5,"extremely":2,"super":1.5,"highly":1.5,"absolutely":1.5,"so":1.3,"slightly":0.5,"bit":0.6},"aspects":{"Battery":["battery","charge","charges","charging","backup","drains","drain","lasts"],"Sound":["sound","bass","audio","vocals","treble","noise","volume"],"Comfort and fit":["fit","fits","comfortable","uncomfortable","tight","ear","ache","tips","light"],"Connectivity":["bluetooth","connection","pairing","pair","disconnecting","disconnect","drops","cutting"],"Price and value":["price","money","rupee","value","overpriced","worth","affordable","expensive"],"Build quality":["build","case","hinge","plastic","finish","sturdy","premium","stopped","broke","broken","defective","durable"],"Customer support":["support","service","refund","replace","replaced","team"],"Delivery and packaging":["delivery","package","packaging","arrived","shipping","box","logistics"],"Microphone":["mic","microphone","calls"]},"actions":{"Battery":"Audit battery capacity and charging-case firmware; publish realistic playback times.","Sound":"Retune the equaliser profile and review driver quality on the next batch.","Comfort and fit":"Ship more ear-tip sizes and test fit across a wider range of ear shapes.","Connectivity":"Investigate Bluetooth firmware stability and prioritise a reconnection fix.","Price and value":"Revisit pricing or bundle accessories so value matches expectations.","Build quality":"Strengthen the case hinge and run failure analysis on returned units.","Customer support":"Set a first-response target and train agents on refund and replacement flows.","Delivery and packaging":"Review courier partners and add protective packaging.","Microphone":"Improve microphone noise suppression and test call quality in noisy places."}};
+const SAMPLE="review_id,rating,text\n1,5,Sound quality is amazing and the bass is deep. Battery easily lasts a full day.\n2,2,\"Battery dies in two hours, very disappointing. The sound is decent though.\"\n3,1,Bluetooth keeps disconnecting every few minutes. Terrible connection and very annoying.\n4,5,\"Comfortable fit, I can wear them for hours. Great value for the price.\"\n5,2,The ear tips hurt after an hour and they keep falling out. Not comfortable at all.\n6,5,Excellent build quality and the case feels premium. Love it.\n7,1,Case hinge broke within a month. Cheap plastic and poor build.\n8,1,Customer support never replied to my emails. Worst service ever.\n9,5,Support team was helpful and replaced my unit quickly. Very happy.\n10,4,Delivery was fast and the packaging was neat.\n11,2,Package arrived damaged and late. Disappointed with the delivery.\n12,2,Overpriced for what you get. Sound is average and battery is weak.\n13,3,\"Good sound for the price, nothing special but works fine.\"\n14,5,Pairing is quick and the connection is stable. Very happy with it.\n15,3,\"Microphone is poor, people cannot hear me on calls. Sound is good though.\"\n16,5,\"Battery life is great, charges fast, and the sound is crisp.\"\n17,1,Left earbud stopped working after two weeks. Poor quality and bad support.\n18,5,Fits perfectly and feels light. Love the comfort.\n19,5,Worth every rupee. Amazing sound and long battery.\n20,2,Not worth the money. Battery drains fast and the app is buggy.\n21,3,\"Average product. Does the job, nothing more.\"\n22,2,The noise cancellation is useless and the sound is flat.\n23,2,Charging case takes forever to charge. Battery backup is bad.\n24,5,Superb bass and clear vocals. Highly recommend.\n25,2,Connection drops when the phone is in my pocket. Frustrating.\n26,5,\"Great delivery experience, arrived a day early.\"\n27,5,Build feels sturdy and the finish is excellent. Battery is good too.\n28,1,\"Too tight and uncomfortable, gave me an ear ache.\"\n29,1,Refund process was slow and support was rude.\n30,4,Decent earbuds for the price. Sound is okay and fit is fine.\n31,3,The sound is not bad but the battery is not good either.\n32,5,\"Absolutely love these! Comfortable, great sound, and affordable too.\"\n33,1,Waste of money. Stopped charging after a month.\n34,5,Mic quality is excellent and calls are clear. Connection is reliable.\n35,3,\"Packaging was cheap and the box was crushed, but the earbuds work fine.\"\n36,2,Delivery took two weeks. Terrible logistics.\n37,5,\"Battery is fantastic, lasts two days. Super happy.\"\n38,1,Sound keeps cutting out and the connection is unreliable. Awful.\n39,4,Pretty good overall. Comfortable and the price is fair.\n40,2,\"Support was okay, but the product is poor quality and the battery is weak.\"\n";
+function makeEngine(L){
+const LEX=L.lex,NEG=new Set(L.neg),INT=L.int,ASP=L.aspects,ACT=L.actions,A2={};
+for(const a in ASP)for(const k of ASP[a])(A2[k]=A2[k]||[]).push(a);
+const tok=s=>s.toLowerCase().replace(/\u2019/g,"'").match(/[a-z']+/g)||[];
+function sc(t){let s=0,neg=0,mul=1,but=1;const hits=[];
+ for(const w of t){
+  if(w==='but'){but=1.5;neg=0;mul=1;continue}
+  if(NEG.has(w)){neg=3;continue}
+  if(INT[w]){mul=INT[w];continue}
+  const act=neg>0;if(act)neg--;
+  const v=LEX[w];
+  if(v!==undefined){const x=v*mul*but*(act?-0.75:1);s+=x;hits.push([w,x,act])}
+  mul=1}
+ return{s,hits}}
+function review(text){
+ const sents=text.split(/[.!?;\n]+/).map(x=>x.trim()).filter(Boolean).map(t=>{
+  const k=tok(t),r=sc(k);return{t,s:r.s,hits:r.hits,as:[...new Set(k.flatMap(w=>A2[w]||[]))]}});
+ const s=sents.reduce((a,x)=>a+x.s,0);
+ return{text,score:s,label:s>=1?'Positive':s<=-1?'Negative':'Neutral',sents}}
+function analyze(rows){
+ const R=rows.map(r=>({...review(r.text),rating:r.rating}));
+ const n=R.length,summary={n,Positive:0,Neutral:0,Negative:0};
+ R.forEach(r=>summary[r.label]++);
+ const rated=R.filter(r=>Number.isFinite(r.rating));
+ if(rated.length){
+  const ex=r=>r.rating>=4?'Positive':r.rating<=2?'Negative':'Neutral';
+  summary.avgRating=rated.reduce((a,r)=>a+r.rating,0)/rated.length;
+  summary.agreement=rated.filter(r=>ex(r)===r.label).length/rated.length}
+ const ag={};for(const a in ASP)ag[a]={name:a,pos:0,neg:0,neu:0,n:0,mag:0,quote:null,qs:0};
+ const terms={};
+ R.forEach(r=>r.sents.forEach(x=>{
+  x.hits.forEach(([w,v,act])=>{
+   const t=act&&LEX[w]>0?'not '+w:(!act&&LEX[w]<0?w:null);if(t)terms[t]=(terms[t]||0)+1});
+  x.as.forEach(a=>{const o=ag[a];o.n++;
+   if(x.s>0)o.pos++;else if(x.s<0){o.neg++;o.mag+=-x.s;if(x.s<o.qs){o.qs=x.s;o.quote=x.t}}else o.neu++})}));
+ const aspects=Object.values(ag).filter(o=>o.n>0).map(o=>{
+  const negRate=o.neg/o.n,avg=o.neg?o.mag/o.neg:0;
+  return{...o,negRate,priority:o.neg*(1+avg/3),
+   level:negRate>=.6&&o.neg>=3?'High':negRate>=.35&&o.neg>=2?'Medium':'Low',action:ACT[o.name]}});
+ const t=Object.entries(terms).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1));
+ return{rows:R,summary,aspects,terms:t}}
+return{analyze,review,tok}}
+
+
+const E=makeEngine(L),$=id=>document.getElementById(id);
+const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function csv(t){const R=[];let r=[],f='',q=false;
+ for(let i=0;i<t.length;i++){const c=t[i];
+  if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+  else if(c==='"')q=true;else if(c===','){r.push(f);f=''}
+  else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;r.push(f);f='';if(r.some(x=>x.trim()))R.push(r);r=[]}
+  else f+=c}
+ r.push(f);if(r.some(x=>x.trim()))R.push(r);return R}
+function toRows(t){const R=csv(t);if(!R.length)return[];
+ const h=R[0].map(x=>x.trim().toLowerCase()),ti=h.findIndex(x=>/^(text|review|comment|body)$/.test(x));
+ if(ti<0)return t.split(/\r?\n/).filter(x=>x.trim()).map(x=>({text:x.trim()}));
+ const ri=h.findIndex(x=>/^(rating|stars|score)$/.test(x));
+ return R.slice(1).map(r=>({text:(r[ti]||'').trim(),rating:ri>=0?parseFloat(r[ri]):undefined})).filter(x=>x.text)}
+let rows=null,last=null;
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function draw(A){
+ const S=A.summary,pct=x=>Math.round(100*x/S.n);
+ const kp=[[S.n,'reviews analysed'],[pct(S.Positive)+'%','positive'],[pct(S.Negative)+'%','negative']];
+ if(S.avgRating!==undefined){kp.push([S.avgRating.toFixed(1)+' / 5','average rating']);kp.push([Math.round(100*S.agreement)+'%','match with star rating'])}
+ $('kp').innerHTML=kp.map(([v,l])=>`<div class="k"><b>${v}</b><span>${l}</span></div>`).join('');
+ const ins=A.aspects.filter(a=>a.neg>0).sort((a,b)=>b.priority-a.priority);
+ $('ins').innerHTML=ins.length?ins.map(a=>`<article class="ins ${a.level}"><h3>${a.name}<span class="tag">${a.level} priority</span></h3><p>${a.neg} of ${a.n} mentions are negative (${Math.round(100*a.negRate)}%).</p>${a.quote?`<blockquote>“${esc(a.quote)}”</blockquote>`:''}<p class="act">${a.action}</p></article>`).join(''):'<p>No negative topics found.</p>';
+ $('chips').innerHTML=A.terms.slice(0,14).map(([w,c])=>`<span class="chip">${esc(w)} <b>×${c}</b></span>`).join('')||'<p>No complaint words found.</p>';
+ $('feed').innerHTML=A.rows.map(r=>`<div class="rv"><span class="${r.label} lb">${r.label}</span>${Number.isFinite(r.rating)?' <small>'+r.rating+' ★</small>':''}<p>${esc(r.text).replace(/[A-Za-z']+/g,w=>{const v=L.lex[w.toLowerCase()];return v===undefined?w:`<mark class="${v>0?'p':'n'}">${w}</mark>`})}</p></div>`).join('');
+ if(!window.Plotly){$('c1').textContent=$('c2').textContent='Charts could not load (Plotly script blocked).';return}
+ const font={color:css('--ink'),family:'system-ui,sans-serif',size:13},cfg={displayModeBar:false,responsive:true};
+ Plotly.react('c1',[{type:'pie',hole:.6,labels:['Positive','Neutral','Negative'],values:[S.Positive,S.Neutral,S.Negative],marker:{colors:[css('--pos'),css('--neu'),css('--neg')]},textinfo:'percent',sort:false}],
+  {height:280,margin:{t:10,b:10,l:10,r:10},paper_bgcolor:'rgba(0,0,0,0)',font,legend:{orientation:'h'}},cfg);
+ const a=A.aspects.slice().sort((x,y)=>y.n-x.n);
+ Plotly.react('c2',[['Positive','pos','--pos'],['Neutral','neu','--neu'],['Negative','neg','--neg']].map(([n,k,c])=>({type:'bar',orientation:'h',name:n,y:a.map(x=>x.name),x:a.map(x=>x[k]),marker:{color:css(c)}})),
+  {barmode:'stack',height:Math.max(280,a.length*34+80),margin:{t:10,b:40,l:140,r:10},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font,legend:{orientation:'h',y:-.12},yaxis:{autorange:'reversed'},xaxis:{title:'mentions',gridcolor:css('--line')}},cfg)}
+function run(r,label){if(!r.length){$('src').textContent='Add at least one review first.';return}
+ last=E.analyze(r);$('out').hidden=false;$('src').textContent=label+': '+r.length+' reviews analysed.';draw(last)}
+$('go').onclick=()=>run(rows||toRows($('ta').value),'Your input');
+$('ta').oninput=()=>{rows=null};
+$('smp').onclick=()=>{rows=toRows(SAMPLE);$('ta').value=rows.map(r=>r.text).join('\n');run(rows,'Sample data')};
+$('fi').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{rows=toRows(t);$('ta').value=rows.map(r=>r.text).join('\n');run(rows,f.name)})};
+new MutationObserver(()=>last&&draw(last)).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>last&&draw(last));
+$('smp').click();
+</script></body></html>
